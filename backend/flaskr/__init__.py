@@ -52,7 +52,7 @@ def create_app(test_config=None):
     def get_books():
         books_to_display = paginate_books(request, Book)
         if len(books_to_display) == 0:
-            return not_found()
+            abort(404)
             
         return jsonify({
             'success': True,
@@ -70,7 +70,7 @@ def create_app(test_config=None):
         try:
             book = Book.query.filter(Book.id == book_id).one_or_none()
             if book is None:
-                return not_found()
+                abort(404)
             if 'rating' in body:
                 book.rating = int(body.get('rating'))
             book.update()
@@ -79,7 +79,7 @@ def create_app(test_config=None):
                 'id': book.id
             })
         except:
-            return bad_request()
+            abort(400)
 
     # @TODO: Write a route that will delete a single book.
     #        Response body keys: 'success', 'deleted'(id of deleted book), 'books' and 'total_books'
@@ -89,7 +89,7 @@ def create_app(test_config=None):
         try:
             book = Book.query.filter(Book.id == book_id).one_or_none()
             if book is None:
-                return not_found()
+                abort(404)
             book.delete()
             books_to_display = paginate_books(request, Book)
             return jsonify({
@@ -99,7 +99,7 @@ def create_app(test_config=None):
                 'total_books': len(Book.query.all())
             })
         except:
-            return unprocessable_entity()
+            abort(422)
 
     # TEST: When completed, you will be able to delete a single book by clicking on the trashcan.
 
@@ -127,34 +127,34 @@ def create_app(test_config=None):
                 'total_books': len(Book.query.all())
             })
         except:
-            return unprocessable_entity()
+            abort(422)
 
     @app.errorhandler(404)
-    def not_found():
+    def not_found(error):
         return jsonify({
             "success": False,
             "error": 404,
-            "message": 'Resource not found'
+            "message": 'resource not found'
         }), 404
 
     @app.errorhandler(422)
-    def unprocessable_entity():
+    def unprocessable_entity(error):
         return jsonify({
             "success": False,
             "error": 422,
-            "message": 'Unprocessable entity'
+            "message": 'unprocessable'
         }), 422
 
     @app.errorhandler(400)
-    def bad_request():
+    def bad_request(error):
         return jsonify({
             "success": False,
             "error": 400,
-            "message": 'Bad Request'
+            "message": 'bad request'
         }), 400
 
     @app.errorhandler(405)
-    def not_allowed():
+    def not_allowed(error):
         return (
             jsonify({"success": False, "error": 405,
                     "message": "method not allowed"}),
