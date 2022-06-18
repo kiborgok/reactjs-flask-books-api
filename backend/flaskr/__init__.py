@@ -79,7 +79,7 @@ def create_app(test_config=None):
                 'id': book.id
             })
         except:
-            return not_found()
+            return bad_request()
 
     # @TODO: Write a route that will delete a single book.
     #        Response body keys: 'success', 'deleted'(id of deleted book), 'books' and 'total_books'
@@ -99,7 +99,7 @@ def create_app(test_config=None):
                 'total_books': len(Book.query.all())
             })
         except:
-            abort(422)
+            return unprocessable_entity()
 
     # TEST: When completed, you will be able to delete a single book by clicking on the trashcan.
 
@@ -127,22 +127,38 @@ def create_app(test_config=None):
                 'total_books': len(Book.query.all())
             })
         except:
-            abort(422)
+            return unprocessable_entity()
 
     @app.errorhandler(404)
     def not_found():
         return jsonify({
             "success": False,
             "error": 404,
-            "message": 'Not Found'
+            "message": 'Resource not found'
         }), 404
 
     @app.errorhandler(422)
-    def not_found():
+    def unprocessable_entity():
         return jsonify({
             "success": False,
             "error": 422,
-            "message": 'Not Found'
+            "message": 'Unprocessable entity'
         }), 422
+
+    @app.errorhandler(400)
+    def bad_request():
+        return jsonify({
+            "success": False,
+            "error": 400,
+            "message": 'Bad Request'
+        }), 400
+
+    @app.errorhandler(405)
+    def not_allowed():
+        return (
+            jsonify({"success": False, "error": 405,
+                    "message": "method not allowed"}),
+            405,
+        )
 
     return app
