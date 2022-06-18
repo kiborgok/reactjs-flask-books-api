@@ -38,15 +38,20 @@ def create_app(test_config=None):
     #         update the frontend to handle additional books in the styling and pagination
     #         Response body keys: 'success', 'books' and 'total_books'
     # TEST: When completed, the webpage will display books including title, author, and rating shown as stars
-    def paginate_books(request, Book):
+    def paginate_books(request, Book, search=None):
         page = request.args.get("page", 1, type=int)
         start = (page - 1) * BOOKS_PER_SHELF
         end = start + BOOKS_PER_SHELF
-
-        books = Book.query.order_by(Book.id).slice(start, end).all()
-        books_to_display = [book.format() for book in books]
-
-        return books_to_display
+        if search: 
+            books = Book.query.order_by(Book.id).filter(
+                Book.title.ilike("%{}%".format(search))
+            )
+            books_to_display = [book.format() for book in books]
+            return books_to_display
+        else:
+            books = Book.query.order_by(Book.id).slice(start, end).all()
+            books_to_display = [book.format() for book in books]
+            return books_to_display
 
     @app.route('/books', methods=['GET'])
     def get_books():
@@ -114,18 +119,26 @@ def create_app(test_config=None):
         title = body.get('title', None)
         author = body.get('author', None)
         rating = body.get('rating', None)
+        search = body.get("search", None)
 
         try:
-            book = Book(title=title,author=author,rating=rating)
-            book.insert()
-
-            books_to_display = paginate_books(request, Book)
-            return jsonify({
-                'success': True,
-                'created': book.id,
-                'books': books_to_display,
-                'total_books': len(Book.query.all())
-            })
+            if search:
+                books_to_display = paginate_books(request, Book, search)
+                return jsonify({
+                    'success': True,
+                    'books': books_to_display,
+                    'total_books': len(books_to_display)
+                })
+            else:
+                book = Book(title=title, author=author, rating=rating)
+                book.insert()
+                books_to_display = paginate_books(request, Book)
+                return jsonify({
+                    'success': True,
+                    'created': book.id,
+                    'books': books_to_display,
+                    'total_books': len(Book.query.all())
+                })
         except:
             abort(422)
 
